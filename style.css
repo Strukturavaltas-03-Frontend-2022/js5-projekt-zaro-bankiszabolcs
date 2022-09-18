@@ -1,0 +1,79 @@
+*{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body{
+    background-image: linear-gradient(45deg, rgb(231, 231, 231), rgba(213, 251, 198, 0.829));
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+.container{
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: rgb(115, 154, 136);
+    box-shadow: 0 0 10px rgba(0, 0, 0, .5)
+}
+
+table{
+    width: 100%;
+    text-align: center;
+    vertical-align: middle
+}
+
+thead{
+    height: 50px;
+    background-color: rgb(162, 190, 177);
+    font-weight: bold;
+}
+
+tbody tr{
+    height: 30px;
+    background-color: rgb(224, 235, 229);
+}
+
+tbody tr:nth-child(even){
+    background-color: rgb(206, 226, 215);
+}
+
+tbody tr:hover{
+    background-color: rgba(200, 200, 200, 0.389);
+}
+
+.btngroup{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    padding: 7px;
+}
+
+input{
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+    text-align: center;
+}
+
+input:focus-visible{
+    outline: none;
+    background-color: white;
+    padding: 5px 0;
+}
+
+td:first-child input{
+   width: 30px;
+   text-align: center;
+   pointer-events: none;
+}
+
+.readOnly{
+    pointer-events: none;
+}
+
+i{
+    cursor: pointer;
+}
