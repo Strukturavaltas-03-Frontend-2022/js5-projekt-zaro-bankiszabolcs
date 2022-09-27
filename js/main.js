@@ -1,35 +1,17 @@
-const keys = ['id', 'name', 'emailAddress', 'address'];
+import data from './fetch.js';
 
+// Táblázat oszlopai (felcserélhetőek)
+const keys = ['id', 'name', 'emailAddress', 'address'];
 const tbody = document.querySelector('.tbody');
 
-const patterns = {
-  /* name: /^[A-Ű][a-űA-Ű\-]{2,9} +[A-Ű][a-ű]{2,9}( +[A-Ű][a-ű])?$/,
-  email: /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/,
-  address: /^[A-ZÁÉÓŐÜŰÖ][a-zőöüóúű]/, */
-  name: /\w/,
-  email: /\w/,
-  address: /\w/,
-};
-
-const getData = async (url) => {
-  try {
-    const resolve = await fetch(url);
-    const result = await resolve.json();
-    return result;
-  } catch (error) {
-    console.error('Hiba történt az adatbázis betöltésekor');
-    return '';
-  }
-};
-
-const data = await getData('http://localhost:3000/users');
-
+// Létrehoz egy elemet és hozzáadja a szülőhöz. Visszaadja a létrehozott elemet.
 const createAnyelement = (typeOfEl, parentEl) => {
   const actualEl = document.createElement(typeOfEl);
   parentEl.appendChild(actualEl);
   return actualEl;
 };
 
+// Létrehozza az alap gombcsoportot (Módosítás / törlés). Visszatér a gombcsoporttal
 const createButtons = () => {
   const buttonGroup = document.createElement('div');
   buttonGroup.classList.add('btngroup', 'basic');
@@ -43,6 +25,7 @@ const createButtons = () => {
   return buttonGroup;
 };
 
+// Táblázathoz hozzáadunk egy új sort
 const createNewRow = () => {
   const actualRow = createAnyelement('tr', tbody);
   for (const k of keys) {
@@ -56,6 +39,7 @@ const createNewRow = () => {
   button.classList.add('fas', 'fa-solid', 'fa-plus', 'newPerson');
 };
 
+// A lekért adaokkal feltöltjük a táblázatot
 const loadData = (datas) => {
   tbody.innerHTML = '';
   datas.forEach((element, index) => {
@@ -69,7 +53,7 @@ const loadData = (datas) => {
     }
     newEl.appendChild(createButtons());
   });
-  createNewRow();
+  createNewRow(); // nem feletkezünk el az üres sorról sem.
 };
 
 loadData(data);
@@ -84,41 +68,45 @@ const changeButton = (row) => {
   saveButton.classList.add('fas', 'fa-solid', 'fa-floppy-disk', 'save');
   const backButton = createAnyelement('i', actualBtnGroup);
   backButton.classList.add('fas', 'fa-solid', 'fa-arrow-rotate-left', 'back');
-  /* actualBtnGroup.appendChild(saveButton);
-  actualBtnGroup.appendChild(backButton); */
+
   toSave();
   toBack();
 };
 
-const editButton = () => {
+// Működőképessé tesszük a edit buttont. Kiszűrjük az összeset majd egy event listenert rakunk rá.
+function editButton() {
   Array.from(editbtn).forEach((element) => element.addEventListener('click', (e) => {
     const actualRow = e.target.parentElement.parentElement;
     const actualInputs = Array.from(actualRow.querySelectorAll('input'));
     actualInputs.forEach((item) => item.classList.toggle('readOnly'));
     changeButton(actualRow);
   }));
-};
+}
 
+// fetch segítségével töröljük az adatbázisból (is) a rekordot.
 const deleteItem = (id) => {
   if (confirm('Biztosan törli a felhasználót?')) {
-    fetch(`http://localhost:3000/users/${id}`, { method: 'DELETE' })
-      .then((resp) => resp.json(), (err) => console.error(`Hiba történt a felhasználó törlésekor:${err}`))
-      .then((json) => console.log(json));
+    fetch(`http://localhost:3000/users/${id}`, { method: 'DELETE' }).then(
+      (resp) => resp.json(),
+      (err) => console.error(`Hiba történt a felhasználó törlésekor:${err}`),
+    );
   }
 };
 
-const deleteButton = () => {
+// működőképessé tesszük a törlés gombot
+function deleteButton() {
   Array.from(deletebtn).forEach((element) => element.addEventListener('click', (e) => {
-    e.preventDefault();
     const actualRow = e.target.parentElement.parentElement;
     const actualInput = actualRow.querySelector('td:first-child input');
     const id = actualInput.value;
     deleteItem(id);
   }));
-};
+}
 
-/* const checkInput = (text, pattern) => pattern.test(text); */
+deleteButton();
+editButton();
 
+// Egy sorból kiszedi az értékeket és visszaküldi azt
 const getRowData = (tr) => {
   const arrayData = tr.querySelectorAll('input');
   const objectData = {};
@@ -129,6 +117,7 @@ const getRowData = (tr) => {
   return objectData;
 };
 
+// Visszaállítja az eredeti edit/trash buttonokat. Kell ez egyáltalán?
 const basicIcons = (row) => {
   const actualBtnGroup = row.querySelector('.btngroup');
   actualBtnGroup.innerHTML = '';
@@ -136,12 +125,12 @@ const basicIcons = (row) => {
   editBtn.classList.add('fas', 'fa-solid', 'fa-pen-to-square');
   const trashButton = createAnyelement('i', actualBtnGroup);
   trashButton.classList.add('fas', 'fa-solid', 'fa-trash');
-  deleteButton();
-  editButton();
+  /* deleteButton();
+  editButton(); */
 };
 
-// jöjjön vissza az eredeti két ikon
-const toSave = () => {
+// KÉRDÉS-------------------------------------------------------------------------------
+function toSave() {
   document.querySelector('.save').addEventListener('click', (e) => {
     const actualRow = e.target.parentElement.parentElement;
     const toSaveData = getRowData(actualRow);
@@ -155,43 +144,56 @@ const toSave = () => {
         'Content-type': 'application/json',
       },
     };
-    fetch(`http://localhost:3000/users/${toSaveData.id}`, fetchOptions).then((res) => res.json(), (error) => console.error(error))
+    fetch(`http://localhost:3000/users/${toSaveData.id}`, fetchOptions)
+      .then(
+        (res) => res.json(),
+        (error) => console.error(error),
+      )
       .then((data) => loadData());
   });
-};
-
-const toBack = () => {
+}
+// KÉRDÉS--------------------------------------------------------------------------------------------
+function toBack() {
   document.querySelector('.back').addEventListener('click', (e) => {
-    const actualRow = e.target.parentElement.parentElement;
-    basicIcons(actualRow);
-    fetch('http://localhost:3000/users').then((res) => res.json(), (error) => console.error(error))
+    /*     const actualRow = e.target.parentElement.parentElement;
+    basicIcons(actualRow); */
+    fetch('http://localhost:3000/users')
+      .then(
+        (res) => res.json(),
+        (error) => console.error(error),
+      )
       .then((data) => loadData(data));
   });
+}
+
+// Új rekord elküldése a szerverre
+const sendPerson = (newItem) => {
+  const fetchOptions = {
+    method: 'POST',
+    mode: 'cors',
+    cache: 'no-cache',
+    body: JSON.stringify(newItem),
+    headers: {
+      'Content-type': 'application/json',
+    },
+  };
+  fetch('http://localhost:3000/users', fetchOptions)
+    .then(
+      (res) => res.json(),
+      (error) => console.error(error),
+    )
+    .then((data) => {
+      loadData(data);
+    });
 };
 
-deleteButton();
-editButton();
-
+// Új rekord felvétele
 const newPerson = () => {
   document.querySelector('.newPerson').addEventListener('click', (e) => {
     const actualRow = e.target.parentElement.parentElement;
-    const newPersonObj = getRowData(actualRow);
-    delete newPersonObj.id;
-
-    const fetchOptions = {
-      method: 'POST',
-      mode: 'cors',
-      cache: 'no-cache',
-      body: JSON.stringify(newPersonObj),
-      headers: {
-        'Content-type': 'application/json',
-      },
-    };
-    fetch('http://localhost:3000/users', fetchOptions).then((res) => res.json(), (error) => console.error(error))
-      .then((data) => {
-        console.log(data);
-        loadData();
-      });
+    const newPersonObj = getRowData(actualRow); // kinyerjük egy sorból az adatot
+    delete newPersonObj.id; // minusz az id. Az nem kell
+    sendPerson(newPersonObj);
   });
 };
 newPerson();
