@@ -3,7 +3,7 @@ const modal = document.querySelector('.modal');
 
 const defaultModal = {
   header: 'hiba',
-  text: '  Hiba az adatok bevitelében. Kérlek adj meg egy nevet, email-címet és lakcímet. (Pl. Lüke Aladár, luke_aladar@gmail.com, 1232 Budapest Inga utca 22.)',
+  text: '  Hiba az adatok bevitelében. Kérlek adj meg egy nevet, email-címet és lakcímet. (Pl. John Doe, john.doe@gmail.com, 20 Riverside Court)',
 };
 
 export const closeModal = function () {

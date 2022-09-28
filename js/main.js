@@ -30,10 +30,14 @@ const createButtons = () => {
   const trashButton = createAnyelement('i', buttonGroup);
   trashButton.classList.add('fas', 'fa-solid', 'fa-trash', 'delete');
   trashButton.onclick = function (e) {
-    const actualRow = e.target.parentElement.parentElement;
-    const actualInput = actualRow.querySelector('td:first-child input');
-    const id = actualInput.value;
-    deleteItem(id, actualRow);
+    if (editable) {
+      const actualRow = e.target.parentElement.parentElement;
+      const actualInput = actualRow.querySelector('td:first-child input');
+      const id = actualInput.value;
+      deleteItem(id, actualRow);
+    } else {
+      openModal(true, 'Hiba', 'Először fejezd be az előző elem szerkesztését!');
+    }
   };
   const editButton = createAnyelement('i', buttonGroup);
   editButton.classList.add('fas', 'fa-solid', 'fa-pen-to-square', 'edit');
@@ -69,7 +73,7 @@ const createNewRow = (newObj = '', emptyLine = true) => {
     input.value = newObj[k] ? newObj[k] : '';
   }
   newObj ? actualRow.appendChild(createButtons()) : createPlusButton(actualRow);
-  if (!emptyLine) tbody.insertBefore(actualRow, tbody.children[0]);
+  if (!emptyLine) tbody.insertBefore(actualRow, tbody.children[Array.from(tbody.children).length - 2]);
 };
 
 // A lekért adaokkal feltöltjük a táblázatot
@@ -106,7 +110,6 @@ makeModal();
 
 const changeButton = (row) => {
   editable = false;
-  console.log(editable);
   const actualBtnGroup = row.querySelector('.btngroup');
   actualBtnGroup.innerHTML = '';
   const saveButton = createAnyelement('i', actualBtnGroup);
@@ -139,7 +142,7 @@ const getRowData = (tr) => {
   return objectData;
 };
 
-// Visszaállítja az eredeti edit/trash buttonokat. 
+// Visszaállítja az eredeti edit/trash buttonokat.
 const basicIcons = (row) => {
   const actualBtnGroup = row.querySelector('.btngroup');
   actualBtnGroup.innerHTML = '';
