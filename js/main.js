@@ -15,7 +15,8 @@ const modal = document.querySelector('.modal');
 const keys = ['id', 'name', 'emailAddress', 'address'];
 const tbody = document.querySelector('.tbody');
 
-// Létrehoz egy elemet és hozzáadja a szülőhöz. Visszaadja a létrehozott elemet.Position = elejére vagy a végére.
+// Létrehoz egy elemet és hozzáadja a szülőhöz. Visszaadja a létrehozott elemet.
+// Position = elejére vagy a végére.
 const createAnyelement = (typeOfEl, parentEl) => {
   const actualEl = document.createElement(typeOfEl);
   parentEl.appendChild(actualEl);
@@ -28,8 +29,24 @@ const createButtons = () => {
   buttonGroup.classList.add('btngroup', 'basic');
   const trashButton = createAnyelement('i', buttonGroup);
   trashButton.classList.add('fas', 'fa-solid', 'fa-trash', 'delete');
+  trashButton.onclick = function (e) {
+    const actualRow = e.target.parentElement.parentElement;
+    const actualInput = actualRow.querySelector('td:first-child input');
+    const id = actualInput.value;
+    deleteItem(id, actualRow);
+  };
   const editButton = createAnyelement('i', buttonGroup);
   editButton.classList.add('fas', 'fa-solid', 'fa-pen-to-square', 'edit');
+  editButton.onclick = function (e) {
+    if (editable) {
+      const actualRow = e.target.parentElement.parentElement;
+      const actualInputs = Array.from(actualRow.querySelectorAll('input'));
+      actualInputs.forEach((item) => item.classList.remove('readOnly'));
+      changeButton(actualRow);
+    } else {
+      openModal(true, 'Hiba', 'Először fejezd be az előző elem szerkesztését!');
+    }
+  };
   buttonGroup.appendChild(editButton);
   buttonGroup.appendChild(trashButton);
 
@@ -87,9 +104,6 @@ function makeModal() {
 
 makeModal();
 
-const editbtn = document.querySelectorAll('.edit');
-const deletebtn = document.querySelectorAll('.delete');
-
 const changeButton = (row) => {
   editable = false;
   console.log(editable);
@@ -104,40 +118,16 @@ const changeButton = (row) => {
   toBack(backButton);
 };
 
-// Működőképessé tesszük a edit buttont. Kiszűrjük az összeset majd egy event listenert rakunk rá.
-function editButton() {
-  Array.from(editbtn).forEach((element) => element.addEventListener('click', (e) => {
-    if (editable) {
-      const actualRow = e.target.parentElement.parentElement;
-      const actualInputs = Array.from(actualRow.querySelectorAll('input'));
-      actualInputs.forEach((item) => item.classList.remove('readOnly'));
-      changeButton(actualRow);
-    }
-  }));
-}
-
 // fetch segítségével töröljük az adatbázisból (is) a rekordot.
-const deleteItem = (id) => {
+const deleteItem = (id, actualRow) => {
   if (confirm('Biztosan törli a felhasználót?')) {
+    actualRow.remove();
     fetch(`http://localhost:3000/users/${id}`, { method: 'DELETE' }).then(
       (resp) => resp.json(),
-      (err) => console.error(`Hiba történt a felhasználó törlésekor:${err}`),
+      (err) => openModal(true, 'Váratlan hiba', `Hiba az adat törlésekor: ${err}`),
     );
   }
 };
-
-// működőképessé tesszük a törlés gombot
-function deleteButton() {
-  Array.from(deletebtn).forEach((element) => element.addEventListener('click', (e) => {
-    const actualRow = e.target.parentElement.parentElement;
-    const actualInput = actualRow.querySelector('td:first-child input');
-    const id = actualInput.value;
-    deleteItem(id);
-  }));
-}
-
-deleteButton();
-editButton();
 
 // Egy sorból kiszedi az értékeket és visszaküldi azt
 const getRowData = (tr) => {
@@ -146,11 +136,10 @@ const getRowData = (tr) => {
   Array.from(arrayData).map((item) => {
     objectData[item.name] = item.value;
   });
-  console.log(objectData);
   return objectData;
 };
 
-// Visszaállítja az eredeti edit/trash buttonokat. Kell ez egyáltalán?
+// Visszaállítja az eredeti edit/trash buttonokat. 
 const basicIcons = (row) => {
   const actualBtnGroup = row.querySelector('.btngroup');
   actualBtnGroup.innerHTML = '';
@@ -158,8 +147,6 @@ const basicIcons = (row) => {
   editBtn.classList.add('fas', 'fa-solid', 'fa-pen-to-square');
   const trashButton = createAnyelement('i', actualBtnGroup);
   trashButton.classList.add('fas', 'fa-solid', 'fa-trash');
-  deleteButton();
-  editButton();
 };
 
 // Sorok frissítése
@@ -170,13 +157,12 @@ const updateRow = (row, newValue) => {
   });
 };
 
-// KÉRDÉS-------------------------------------------------------------------------------
 function toSave(item) {
   item.addEventListener('click', (e) => {
     const actualRow = e.target.parentElement.parentElement;
     const toSaveData = getRowData(actualRow);
-    Array.from(actualRow.querySelectorAll('input')).forEach((item) => item.classList.add('readOnly'));
-    if (validator(actualRow)) {
+    Array.from(actualRow.querySelectorAll('input')).forEach((input) => input.classList.add('readOnly'));
+    if (validator(toSaveData)) {
       basicIcons(actualRow);
       updateRow(actualRow, toSaveData);
       const fetchOptions = {
@@ -191,9 +177,9 @@ function toSave(item) {
       fetch(`http://localhost:3000/users/${toSaveData.id}`, fetchOptions)
         .then(
           (res) => res.json(),
-          (error) => console.error(error),
-        )
-        .then((data) => console.log(data));
+          (error) => openModal(true, 'Váratlan hiba', `Hiba az adatok feltöltésekor: ${error}`),
+        );
+
       openModal(false, 'Sikeres módosítás', 'Gratulálunk! Sikeresen módosítottad az adatokat!');
       editable = true;
     } else {
@@ -201,18 +187,15 @@ function toSave(item) {
     }
   });
 }
-// KÉRDÉS--------------------------------------------------------------------------------------------
+
 function toBack(item) {
-  item.addEventListener('click', (e) => {
-    console.log(item);
-   /*  const actualRow = e.target.parentElement.parentElement;
-    basicIcons(actualRow); */
+  item.addEventListener('click', () => {
     fetch('http://localhost:3000/users')
       .then(
         (res) => res.json(),
-        (error) => console.error(error),
+        (error) => openModal(true, 'Váratlan hiba', `Hiba az adatok lekérésekor: ${error}`),
       )
-      .then((data) => loadData(data));
+      .then((oldData) => loadData(oldData));
     editable = true;
   });
 }
@@ -231,10 +214,10 @@ const sendPerson = (newItem) => {
   fetch('http://localhost:3000/users', fetchOptions)
     .then(
       (res) => res.json(),
-      (error) => console.error(error),
+      (error) => openModal(true, 'Váratlan hiba', `Hiba az adatok feltöltésekor: ${error}`),
     )
-    .then((data) => {
-      createNewRow(data, false);
+    .then((newData) => {
+      createNewRow(newData, false);
     });
   openModal(false, 'Sikeres feltöltés', 'Gratulálunk! Sikeresen hozzáadtál egy új embert a táblázathoz');
 };
@@ -246,7 +229,9 @@ const newPerson = () => {
     const newPersonObj = getRowData(actualRow); // kinyerjük egy sorból az adatot
     delete newPersonObj.id; // minusz az id. Az nem kell
     if (validator(newPersonObj)) {
-      Array.from(actualRow.querySelectorAll('input')).forEach((element) => element.value = '');
+      Array.from(actualRow.querySelectorAll('input')).forEach((element) => {
+        element.value = '';
+      });
       sendPerson(newPersonObj);
     } else {
       openModal();
